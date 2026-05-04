@@ -1,0 +1,13 @@
+{
+  "resourceType": "Patient",
+  "id": "patient-001",
+  "identifier": [
+    {
+      "system": "urn:tz:moh:national-id",
+      "value": "19850612-FACILITY-0042"
+    }
+  ],
+  "name": [{"family": "Example", "given": ["Patient"]}],
+  "gender": "female",
+  "birthDate": "1985-06-12"
+}

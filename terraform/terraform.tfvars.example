@@ -1,0 +1,10 @@
+# Copy this file to terraform.tfvars and configure for your deployment
+
+project_name         = "clinical-ai"
+primary_region       = "us-east-1"
+dr_region            = "eu-west-2"
+country_code         = "tz"
+supported_languages  = ["sw-TZ", "sw-KE", "so-SO", "en-ZA"]
+monthly_budget_limit = 300
+waf_geo_restriction  = ["TZ", "KE", "UG", "RW", "BI"]
+fhir_retention_years = 7

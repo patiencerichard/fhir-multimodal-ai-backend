@@ -1,0 +1,13 @@
+{
+  "resourceType": "Encounter",
+  "id": "encounter-001",
+  "meta": {
+    "tag": [{"system": "sync-origin", "code": "offline-origin"}]
+  },
+  "status": "finished",
+  "class": {"code": "AMB", "display": "ambulatory"},
+  "subject": {"reference": "Patient/patient-001"},
+  "period": {"start": "2026-05-04T10:30:00Z"},
+  "reasonCode": [{"text": "Cough for 3 weeks, night sweats, weight loss"}],
+  "serviceProvider": {"reference": "Organization/facility-042"}
+}

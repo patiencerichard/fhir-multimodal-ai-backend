@@ -1,0 +1,17 @@
+{
+  "resourceType": "DiagnosticReport",
+  "id": "diag-tb-screen-001",
+  "status": "preliminary",
+  "code": {
+    "coding": [{"system": "http://loinc.org", "code": "71388-3", "display": "TB screening"}]
+  },
+  "subject": {"reference": "Patient/patient-001"},
+  "encounter": {"reference": "Encounter/encounter-001"},
+  "effectiveDateTime": "2026-05-04T10:32:00Z",
+  "conclusion": "Cough audio screening suggests elevated TB risk (72/100). Recommend GeneXpert confirmatory test. This is a SCREENING result, not a diagnosis.",
+  "extension": [
+    {"url": "cough-risk-score", "valueInteger": 72},
+    {"url": "risk-tier", "valueString": "high"},
+    {"url": "suggested-test", "valueString": "GeneXpert"}
+  ]
+}

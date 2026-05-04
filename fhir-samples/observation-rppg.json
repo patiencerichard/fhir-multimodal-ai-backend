@@ -1,0 +1,17 @@
+{
+  "resourceType": "Observation",
+  "id": "obs-rppg-hr-001",
+  "status": "preliminary",
+  "code": {
+    "coding": [{"system": "http://loinc.org", "code": "8867-4", "display": "Heart rate"}]
+  },
+  "subject": {"reference": "Patient/patient-001"},
+  "encounter": {"reference": "Encounter/encounter-001"},
+  "effectiveDateTime": "2026-05-04T10:31:00Z",
+  "valueQuantity": {"value": 88, "unit": "beats/minute", "system": "http://unitsofmeasure.org", "code": "/min"},
+  "note": [{"text": "Estimated via rPPG camera analysis. NOT a medical device measurement. Requires clinical confirmation with pulse oximeter before treatment decisions."}],
+  "extension": [
+    {"url": "measurement-confidence", "valueString": "moderate"},
+    {"url": "skin-tone-flag", "valueString": "reduced-confidence"}
+  ]
+}
