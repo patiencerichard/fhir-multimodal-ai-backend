@@ -1,0 +1,16 @@
+{
+  "resourceType": "DiagnosticReport",
+  "id": "cough-screening-001",
+  "status": "preliminary",
+  "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v2-0074", "code": "LAB"}]}],
+  "code": {"coding": [{"system": "http://loinc.org", "code": "LP29684-5", "display": "Radiology"}], "text": "Cough audio TB screening"},
+  "subject": {"reference": "Patient/patient-001"},
+  "encounter": {"reference": "Encounter/encounter-001"},
+  "effectiveDateTime": "2026-05-04T10:31:00Z",
+  "result": [{"reference": "Observation/obs-cough-001"}],
+  "conclusion": "Cough screening score 72/100 — HIGH risk tier. Referral required. Suggested test: GeneXpert.",
+  "extension": [
+    {"url": "referral-required", "valueBoolean": true},
+    {"url": "suggested-test", "valueString": "GeneXpert"}
+  ]
+}

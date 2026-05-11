@@ -1,0 +1,143 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0, "y": 0, "width": 12, "height": 6,
+      "properties": {
+        "title": "1. Triage Volume by Channel (1hr rolling)",
+        "view": "timeSeries",
+        "stacked": true,
+        "period": 3600,
+        "stat": "Sum",
+        "metrics": [
+          ["FhirMultimodal", "TriageCount", "Channel", "voice"],
+          ["FhirMultimodal", "TriageCount", "Channel", "rppg"],
+          ["FhirMultimodal", "TriageCount", "Channel", "cough"],
+          ["FhirMultimodal", "TriageCount", "Channel", "text"]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 0, "width": 12, "height": 6,
+      "properties": {
+        "title": "2. Triage Volume by Language (1hr rolling)",
+        "view": "timeSeries",
+        "stacked": true,
+        "period": 3600,
+        "stat": "Sum",
+        "metrics": [
+          ["FhirMultimodal", "TriageCount", "Language", "sw-TZ"],
+          ["FhirMultimodal", "TriageCount", "Language", "sw-KE"],
+          ["FhirMultimodal", "TriageCount", "Language", "so-SO"],
+          ["FhirMultimodal", "TriageCount", "Language", "en-ZA"],
+          ["FhirMultimodal", "TriageCount", "Language", "fr-FR"]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 6, "width": 12, "height": 6,
+      "properties": {
+        "title": "3. Bedrock Token Consumption + Estimated Cost (daily)",
+        "view": "timeSeries",
+        "stacked": false,
+        "period": 86400,
+        "stat": "Sum",
+        "metrics": [
+          ["FhirMultimodal", "BedrockInputTokens", "Model", "claude-sonnet"],
+          ["FhirMultimodal", "BedrockInputTokens", "Model", "claude-haiku"],
+          ["FhirMultimodal", "BedrockEstimatedCostUSD"]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 6, "width": 12, "height": 6,
+      "properties": {
+        "title": "4. Triage Latency P50/P95 (5min resolution)",
+        "view": "timeSeries",
+        "stacked": false,
+        "period": 300,
+        "metrics": [
+          [{"expression": "SELECT PERCENTILE(TriageLatencyMs, 50) FROM FhirMultimodal", "label": "P50 latency (ms)", "id": "p50"}],
+          [{"expression": "SELECT PERCENTILE(TriageLatencyMs, 95) FROM FhirMultimodal", "label": "P95 latency (ms)", "id": "p95"}]
+        ],
+        "annotations": {
+          "horizontal": [
+            {"label": "P50 SLO 20s", "value": 20000, "color": "#ff7f0e"},
+            {"label": "P95 SLO 45s", "value": 45000, "color": "#d62728"}
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 12, "width": 8, "height": 6,
+      "properties": {
+        "title": "5. Offline Encounter Queue Depth",
+        "view": "timeSeries",
+        "stacked": false,
+        "period": 300,
+        "stat": "Maximum",
+        "metrics": [
+          ["FhirMultimodal", "OfflineQueueDepth"]
+        ],
+        "annotations": {
+          "horizontal": [{"label": "Alert threshold", "value": 500, "color": "#d62728"}]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8, "y": 12, "width": 8, "height": 6,
+      "properties": {
+        "title": "6. FHIR Write Errors — HealthLake 4xx/5xx",
+        "view": "timeSeries",
+        "stacked": false,
+        "period": 300,
+        "metrics": [
+          [{"expression": "errors/total*100", "label": "Error rate %", "id": "errorRate"}],
+          ["FhirMultimodal", "HealthLakeWriteErrors", {"id": "errors", "visible": false}],
+          ["FhirMultimodal", "HealthLakeWriteTotal", {"id": "total", "visible": false}]
+        ],
+        "annotations": {
+          "horizontal": [{"label": "1% alarm threshold", "value": 1, "color": "#d62728"}]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16, "y": 12, "width": 8, "height": 6,
+      "properties": {
+        "title": "7. rPPG Fargate Task Duration",
+        "view": "timeSeries",
+        "stacked": false,
+        "period": 300,
+        "stat": "Average",
+        "metrics": [
+          ["FhirMultimodal", "RppgTaskDurationSeconds"]
+        ],
+        "annotations": {
+          "horizontal": [{"label": "60s alarm", "value": 60, "color": "#d62728"}]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 18, "width": 24, "height": 6,
+      "properties": {
+        "title": "8. rPPG Confidence Distribution by Skin Tone (equity monitoring, daily)",
+        "view": "bar",
+        "stacked": false,
+        "period": 86400,
+        "stat": "Average",
+        "metrics": [
+          ["FhirMultimodal", "RppgConfidenceScore", "SkinTone", "ITA1-2", {"label": "Fitzpatrick I-II"}],
+          ["FhirMultimodal", "RppgConfidenceScore", "SkinTone", "ITA3-4", {"label": "Fitzpatrick III-IV"}],
+          ["FhirMultimodal", "RppgConfidenceScore", "SkinTone", "ITA5-6", {"label": "Fitzpatrick V-VI (reduced ceiling)"}]
+        ]
+      }
+    }
+  ]
+}

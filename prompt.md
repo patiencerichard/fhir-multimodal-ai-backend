@@ -1,18 +1,43 @@
-You are an AWS Solutions Architect and clinical systems engineer.
-Build a production-ready, FHIR R4-compliant multimodal clinical AI
-backend on AWS targeting low-resource health environments with
-unreliable connectivity and multilingual patient populations.
+# FHIR Multimodal Clinical AI Backend for Community Health Workers
 
-This system serves Community Health Workers (CHWs) using basic
-Android smartphones in rural settings. It must operate at three
-connectivity tiers (full cloud, degraded queue-and-sync, fully
-offline) and handle voice, image, and text inputs to support
-clinical triage and decision support.
+> This prompt builds a complete FHIR R4 clinical AI backend for
+> Community Health Workers in low-resource settings — voice triage
+> in 100+ languages, camera-based vitals estimation, TB cough
+> screening, and offline-first sync for areas with no connectivity.
+> Estimated cost: ~$0.014 per clinical encounter at 15,000/month.
+
+═══════════════════════════════════════════════════════════
+INTRODUCTION
+═══════════════════════════════════════════════════════════
+
+Millions of Community Health Workers (CHWs) in Africa, South Asia,
+and Southeast Asia conduct clinical triage with no decision support
+tools — relying on memory, paper forms, and basic training. They
+work in areas with no reliable internet, serve patients who speak
+dozens of local languages, and use basic Android smartphones as
+their only technology.
+
+This prompt generates a complete, production-ready AWS backend that
+gives CHWs an AI-powered triage assistant that:
+
+  • Understands voice in 100+ languages (Swahili, Somali,
+    Kinyarwanda, Hindi, Indonesian, and more) — no reading required
+  • Estimates heart rate and SpO2 from the phone camera — no
+    pulse oximeter needed
+  • Screens for TB from cough audio recordings
+  • Works fully offline with embedded IMCI rules, syncing to the
+    cloud when connectivity returns
+  • Costs ~$0.014 per encounter — affordable at national scale
 
 The architecture is country-agnostic and language-pluggable.
 All country-specific values (national ID URI, language codes,
 clinical guidelines, drug formularies) are injected via
 configuration — not hardcoded.
+
+You are an AWS Solutions Architect and clinical systems engineer.
+Build a production-ready, FHIR R4-compliant multimodal clinical AI
+backend on AWS targeting low-resource health environments with
+unreliable connectivity and multilingual patient populations.
 
 ═══════════════════════════════════════════════════════════
 PREREQUISITES
@@ -85,6 +110,41 @@ After running this prompt, you will have:
 - A bilingual CHW user guide
 - A Locust load test script
 - Total infrastructure cost: ~$215/month for 15,000 encounters
+
+═══════════════════════════════════════════════════════════
+ARCHITECTURE SUMMARY
+═══════════════════════════════════════════════════════════
+
+  ┌─────────────────────────────────────────────────────┐
+  │  CHW Android App (Flutter, offline-first)           │
+  └────────────┬──────────────┬──────────────┬──────────┘
+               │ Voice        │ Camera       │ Cough
+               ▼              ▼              ▼
+  ┌────────────────────────────────────────────────────┐
+  │  LAYER 2 — Multimodal Intake Pipeline              │
+  │  Path A: Transcribe Standard (100+ languages)      │
+  │  Path B: ECS Fargate rPPG (CHROM algorithm)        │
+  │  Path C: Step Functions + MFCC + Bedrock Haiku     │
+  └────────────────────┬───────────────────────────────┘
+                       ▼
+  ┌────────────────────────────────────────────────────┐
+  │  LAYER 3 — Clinical Reasoning (Bedrock Claude)     │
+  │  RAG from Aurora pgvector knowledge base           │
+  │  Multilingual output + safety guardrails           │
+  └────────────────────┬───────────────────────────────┘
+                       ▼
+  ┌────────────────────────────────────────────────────┐
+  │  LAYER 1 — HealthLake FHIR R4 Datastore            │
+  │  KMS CMK · SMART on FHIR · CloudTrail audit        │
+  └────────────────────────────────────────────────────┘
+  ┌────────────────────────────────────────────────────┐
+  │  LAYER 4 — Offline Sync (AppSync + DynamoDB)       │
+  │  FULL → DEGRADED → OFFLINE tiers                   │
+  └────────────────────────────────────────────────────┘
+  ┌────────────────────────────────────────────────────┐
+  │  LAYER 5 — Monitoring, Cost Controls, Compliance   │
+  │  CloudWatch (8 panels) · Budgets · WAF · VPC       │
+  └────────────────────────────────────────────────────┘
 
 ═══════════════════════════════════════════════════════════
 LAYER 1 — PATIENT DATA FOUNDATION (FHIR R4)
