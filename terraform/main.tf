@@ -4,7 +4,8 @@
 terraform {
   required_version = ">= 1.5"
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+    aws  = { source = "hashicorp/aws", version = "~> 5.80" }
+    awscc = { source = "hashicorp/awscc", version = "~> 1.0" }
   }
 }
 
@@ -29,7 +30,7 @@ resource "aws_kms_alias" "main" {
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
-  tags = { Name = "${local.p}-vpc" }
+  tags                 = { Name = "${local.p}-vpc" }
 }
 
 resource "aws_subnet" "private" {
@@ -37,7 +38,7 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.${count.index}.0/24"
   availability_zone = data.aws_availability_zones.available.names[count.index]
-  tags = { Name = "${local.p}-private-${count.index}" }
+  tags              = { Name = "${local.p}-private-${count.index}" }
 }
 
 data "aws_availability_zones" "available" { state = "available" }
@@ -55,14 +56,14 @@ resource "aws_security_group" "lambda" {
 
 # VPC Endpoints (no internet transit for AWS service calls)
 resource "aws_vpc_endpoint" "s3" {
-  vpc_id       = aws_vpc.main.id
-  service_name = "com.amazonaws.${var.primary_region}.s3"
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.primary_region}.s3"
   vpc_endpoint_type = "Gateway"
 }
 
 resource "aws_vpc_endpoint" "dynamodb" {
-  vpc_id       = aws_vpc.main.id
-  service_name = "com.amazonaws.${var.primary_region}.dynamodb"
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.primary_region}.dynamodb"
   vpc_endpoint_type = "Gateway"
 }
 
@@ -76,11 +77,11 @@ resource "aws_vpc_endpoint" "bedrock" {
 }
 
 # ── HealthLake FHIR Datastore ─────────────────────────────────────────────────
-resource "aws_healthlake_fhir_datastore" "main" {
-  datastore_name        = "${local.p}-fhir"
+resource "awscc_healthlake_fhir_datastore" "main" {
+  datastore_name         = "${local.p}-fhir"
   datastore_type_version = "R4"
-  sse_configuration {
-    kms_encryption_config {
+  sse_configuration = {
+    kms_encryption_config = {
       cmk_type   = "CUSTOMER_MANAGED_KMS_KEY"
       kms_key_id = aws_kms_key.main.arn
     }
@@ -88,14 +89,19 @@ resource "aws_healthlake_fhir_datastore" "main" {
 }
 
 # ── S3 Buckets ────────────────────────────────────────────────────────────────
-resource "aws_s3_bucket" "audio"     { bucket = "${local.p}-audio" }
-resource "aws_s3_bucket" "video"     { bucket = "${local.p}-video" }
+resource "aws_s3_bucket" "audio" { bucket = "${local.p}-audio" }
+resource "aws_s3_bucket" "video" { bucket = "${local.p}-video" }
 resource "aws_s3_bucket" "knowledge" { bucket = "${local.p}-clinical-knowledge" }
-resource "aws_s3_bucket" "audit"     { bucket = "${local.p}-audit-logs" }
+resource "aws_s3_bucket" "audit" { bucket = "${local.p}-audit-logs" }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "audio" {
   bucket = aws_s3_bucket.audio.id
-  rule { apply_server_side_encryption_by_default { sse_algorithm = "aws:kms"; kms_master_key_id = aws_kms_key.main.arn } }
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.main.arn
+    }
+  }
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "audit" {
@@ -161,17 +167,32 @@ resource "aws_dynamodb_table" "sessions" {
   name         = "${local.p}-sessions"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "session_id"
-  attribute { name = "session_id"; type = "S" }
-  ttl { attribute_name = "ttl"; enabled = true }
-  server_side_encryption { enabled = true; kms_key_arn = aws_kms_key.main.arn }
+  attribute {
+    name = "session_id"
+    type = "S"
+  }
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+  server_side_encryption {
+    enabled     = true
+    kms_key_arn = aws_kms_key.main.arn
+  }
 }
 
 resource "aws_dynamodb_table" "sync_queue" {
   name         = "${local.p}-sync-queue"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "encounter_id"
-  attribute { name = "encounter_id"; type = "S" }
-  attribute { name = "sync_status";  type = "S" }
+  attribute {
+    name = "encounter_id"
+    type = "S"
+  }
+  attribute {
+    name = "sync_status"
+    type = "S"
+  }
   global_secondary_index {
     name            = "sync_status-index"
     hash_key        = "sync_status"
@@ -179,22 +200,34 @@ resource "aws_dynamodb_table" "sync_queue" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_IMAGE"
-  server_side_encryption { enabled = true; kms_key_arn = aws_kms_key.main.arn }
+  server_side_encryption {
+    enabled     = true
+    kms_key_arn = aws_kms_key.main.arn
+  }
 }
 
 resource "aws_dynamodb_table" "conflicts" {
   name         = "${local.p}-conflicts"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "encounter_id"
-  attribute { name = "encounter_id"; type = "S" }
-  server_side_encryption { enabled = true; kms_key_arn = aws_kms_key.main.arn }
+  attribute {
+    name = "encounter_id"
+    type = "S"
+  }
+  server_side_encryption {
+    enabled     = true
+    kms_key_arn = aws_kms_key.main.arn
+  }
 }
 
 # ── IAM — Lambda execution role ───────────────────────────────────────────────
 data "aws_iam_policy_document" "lambda_assume" {
   statement {
     actions = ["sts:AssumeRole"]
-    principals { type = "Service"; identifiers = ["lambda.amazonaws.com"] }
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
   }
 }
 
@@ -209,16 +242,16 @@ resource "aws_iam_role_policy" "lambda_inline" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      { Effect = "Allow"; Action = ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"]; Resource = "arn:aws:logs:*:*:*" },
-      { Effect = "Allow"; Action = ["s3:GetObject","s3:PutObject"]; Resource = ["${aws_s3_bucket.audio.arn}/*","${aws_s3_bucket.video.arn}/*","${aws_s3_bucket.knowledge.arn}/*"] },
-      { Effect = "Allow"; Action = ["sqs:SendMessage","sqs:ReceiveMessage","sqs:DeleteMessage","sqs:GetQueueUrl"]; Resource = [aws_sqs_queue.voice.arn, aws_sqs_queue.cough.arn, aws_sqs_queue.sync.arn] },
-      { Effect = "Allow"; Action = ["dynamodb:PutItem","dynamodb:GetItem","dynamodb:UpdateItem","dynamodb:Query"]; Resource = [aws_dynamodb_table.sessions.arn, aws_dynamodb_table.sync_queue.arn, "${aws_dynamodb_table.sync_queue.arn}/index/*"] },
-      { Effect = "Allow"; Action = ["bedrock:InvokeModel"]; Resource = "*" },
-      { Effect = "Allow"; Action = ["bedrock-agent-runtime:Retrieve"]; Resource = "*" },
-      { Effect = "Allow"; Action = ["transcribe:StartTranscriptionJob","transcribe:GetTranscriptionJob"]; Resource = "*" },
-      { Effect = "Allow"; Action = ["healthlake:CreateResource","healthlake:ReadResource"]; Resource = aws_healthlake_fhir_datastore.main.arn },
-      { Effect = "Allow"; Action = ["kms:Decrypt","kms:GenerateDataKey"]; Resource = aws_kms_key.main.arn },
-      { Effect = "Allow"; Action = ["ec2:CreateNetworkInterface","ec2:DescribeNetworkInterfaces","ec2:DeleteNetworkInterface"]; Resource = "*" }
+      { Effect = "Allow", Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"], Resource = "arn:aws:logs:*:*:*" },
+      { Effect = "Allow", Action = ["s3:GetObject", "s3:PutObject"], Resource = ["${aws_s3_bucket.audio.arn}/*", "${aws_s3_bucket.video.arn}/*", "${aws_s3_bucket.knowledge.arn}/*"] },
+      { Effect = "Allow", Action = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueUrl"], Resource = [aws_sqs_queue.voice.arn, aws_sqs_queue.cough.arn, aws_sqs_queue.sync.arn] },
+      { Effect = "Allow", Action = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem", "dynamodb:Query"], Resource = [aws_dynamodb_table.sessions.arn, aws_dynamodb_table.sync_queue.arn, "${aws_dynamodb_table.sync_queue.arn}/index/*"] },
+      { Effect = "Allow", Action = ["bedrock:InvokeModel"], Resource = "*" },
+      { Effect = "Allow", Action = ["bedrock-agent-runtime:Retrieve"], Resource = "*" },
+      { Effect = "Allow", Action = ["transcribe:StartTranscriptionJob", "transcribe:GetTranscriptionJob"], Resource = "*" },
+      { Effect = "Allow", Action = ["healthlake:CreateResource", "healthlake:ReadResource"], Resource = awscc_healthlake_fhir_datastore.main.datastore_arn },
+      { Effect = "Allow", Action = ["kms:Decrypt", "kms:GenerateDataKey"], Resource = aws_kms_key.main.arn },
+      { Effect = "Allow", Action = ["ec2:CreateNetworkInterface", "ec2:DescribeNetworkInterfaces", "ec2:DeleteNetworkInterface"], Resource = "*" }
     ]
   })
 }
@@ -226,7 +259,7 @@ resource "aws_iam_role_policy" "lambda_inline" {
 # ── Lambda Functions ──────────────────────────────────────────────────────────
 locals {
   lambda_env = {
-    HEALTHLAKE_DATASTORE_ID = aws_healthlake_fhir_datastore.main.id
+    HEALTHLAKE_DATASTORE_ID = awscc_healthlake_fhir_datastore.main.datastore_id
     SESSION_TABLE           = aws_dynamodb_table.sessions.name
     VOCAB_BUCKET            = aws_s3_bucket.audio.bucket
     SUPPORTED_LANGUAGES     = jsonencode(var.supported_languages)
@@ -246,14 +279,14 @@ data "archive_file" "lambda" {
 }
 
 resource "aws_lambda_function" "fns" {
-  for_each      = toset(["channel_router", "transcription_orchestrator", "rppg_result_handler", "cough_feature_extractor", "clinical_reasoning", "fhir_sync", "budget_enforcer"])
-  function_name = "${local.p}-${replace(each.key, "_", "-")}"
-  role          = aws_iam_role.lambda.arn
-  handler       = "${each.key}.handler"
-  runtime       = "python3.11"
-  filename      = data.archive_file.lambda[each.key].output_path
-  source_code_hash = data.archive_file.lambda[each.key].output_base64sha256
-  timeout       = 300
+  for_each                       = toset(["channel_router", "transcription_orchestrator", "rppg_result_handler", "cough_feature_extractor", "clinical_reasoning", "fhir_sync", "budget_enforcer"])
+  function_name                  = "${local.p}-${replace(each.key, "_", "-")}"
+  role                           = aws_iam_role.lambda.arn
+  handler                        = "${each.key}.handler"
+  runtime                        = "python3.11"
+  filename                       = data.archive_file.lambda[each.key].output_path
+  source_code_hash               = data.archive_file.lambda[each.key].output_base64sha256
+  timeout                        = 300
   reserved_concurrent_executions = each.key == "clinical_reasoning" ? 50 : -1
   environment { variables = local.lambda_env }
   vpc_config {
@@ -294,7 +327,7 @@ resource "aws_ecs_cluster" "main" {
 
 resource "aws_iam_role" "ecs_task" {
   name               = "${local.p}-ecs-task"
-  assume_role_policy = jsonencode({ Version = "2012-10-17"; Statement = [{ Effect = "Allow"; Action = "sts:AssumeRole"; Principal = { Service = "ecs-tasks.amazonaws.com" } }] })
+  assume_role_policy = jsonencode({ Version = "2012-10-17", Statement = [{ Effect = "Allow", Action = "sts:AssumeRole", Principal = { Service = "ecs-tasks.amazonaws.com" } }] })
 }
 
 resource "aws_ecs_task_definition" "rppg" {
@@ -310,13 +343,13 @@ resource "aws_ecs_task_definition" "rppg" {
     image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${local.p}-rppg:latest"
     essential = true
     environment = [
-      { name = "HEALTHLAKE_DATASTORE_ID"; value = aws_healthlake_fhir_datastore.main.id }
+      { name = "HEALTHLAKE_DATASTORE_ID", value = awscc_healthlake_fhir_datastore.main.datastore_id }
     ]
     logConfiguration = {
       logDriver = "awslogs"
       options = {
-        "awslogs-group"  = "/ecs/${local.p}-rppg"
-        "awslogs-region" = var.primary_region
+        "awslogs-group"         = "/ecs/${local.p}-rppg"
+        "awslogs-region"        = var.primary_region
         "awslogs-stream-prefix" = "rppg"
       }
     }
@@ -364,18 +397,21 @@ resource "aws_db_subnet_group" "main" {
 }
 
 resource "aws_rds_cluster" "pgvector" {
-  cluster_identifier     = "${local.p}-pgvector"
-  engine                 = "aurora-postgresql"
-  engine_mode            = "provisioned"
-  engine_version         = "15.4"
-  database_name          = "clinical_kb"
-  master_username        = "admin"
+  cluster_identifier          = "${local.p}-pgvector"
+  engine                      = "aurora-postgresql"
+  engine_mode                 = "provisioned"
+  engine_version              = "15.4"
+  database_name               = "clinical_kb"
+  master_username             = "admin"
   manage_master_user_password = true
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-  kms_key_id             = aws_kms_key.main.arn
-  storage_encrypted      = true
-  skip_final_snapshot    = true
-  serverlessv2_scaling_configuration { min_capacity = 0.5; max_capacity = 2 }
+  db_subnet_group_name        = aws_db_subnet_group.main.name
+  kms_key_id                  = aws_kms_key.main.arn
+  storage_encrypted           = true
+  skip_final_snapshot         = true
+  serverlessv2_scaling_configuration {
+    min_capacity = 0.5
+    max_capacity = 2
+  }
 }
 
 resource "aws_rds_cluster_instance" "pgvector" {
@@ -388,7 +424,7 @@ resource "aws_rds_cluster_instance" "pgvector" {
 # ── Bedrock Knowledge Base ────────────────────────────────────────────────────
 resource "aws_iam_role" "bedrock_kb" {
   name               = "${local.p}-bedrock-kb"
-  assume_role_policy = jsonencode({ Version = "2012-10-17"; Statement = [{ Effect = "Allow"; Action = "sts:AssumeRole"; Principal = { Service = "bedrock.amazonaws.com" } }] })
+  assume_role_policy = jsonencode({ Version = "2012-10-17", Statement = [{ Effect = "Allow", Action = "sts:AssumeRole", Principal = { Service = "bedrock.amazonaws.com" } }] })
 }
 
 resource "aws_iam_role_policy" "bedrock_kb" {
@@ -396,8 +432,8 @@ resource "aws_iam_role_policy" "bedrock_kb" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      { Effect = "Allow"; Action = ["s3:GetObject","s3:ListBucket"]; Resource = [aws_s3_bucket.knowledge.arn, "${aws_s3_bucket.knowledge.arn}/*"] },
-      { Effect = "Allow"; Action = ["bedrock:InvokeModel"]; Resource = "*" }
+      { Effect = "Allow", Action = ["s3:GetObject", "s3:ListBucket"], Resource = [aws_s3_bucket.knowledge.arn, "${aws_s3_bucket.knowledge.arn}/*"] },
+      { Effect = "Allow", Action = ["bedrock:InvokeModel"], Resource = "*" }
     ]
   })
 }
@@ -414,10 +450,10 @@ resource "aws_bedrockagent_knowledge_base" "main" {
   storage_configuration {
     type = "RDS"
     rds_configuration {
-      resource_arn            = aws_rds_cluster.pgvector.arn
-      credentials_secret_arn  = aws_rds_cluster.pgvector.master_user_secret[0].secret_arn
-      database_name           = "clinical_kb"
-      table_name              = "bedrock_kb"
+      resource_arn           = aws_rds_cluster.pgvector.arn
+      credentials_secret_arn = aws_rds_cluster.pgvector.master_user_secret[0].secret_arn
+      database_name          = "clinical_kb"
+      table_name             = "bedrock_kb"
       field_mapping {
         primary_key_field = "id"
         vector_field      = "embedding"
@@ -438,7 +474,10 @@ resource "aws_bedrockagent_data_source" "guidelines" {
   vector_ingestion_configuration {
     chunking_configuration {
       chunking_strategy = "FIXED_SIZE"
-      fixed_size_chunking_configuration { max_tokens = 512; overlap_percentage = 20 }
+      fixed_size_chunking_configuration {
+        max_tokens         = 512
+        overlap_percentage = 20
+      }
     }
   }
 }
@@ -482,25 +521,25 @@ resource "aws_budgets_budget" "main" {
   limit_unit   = "USD"
   time_unit    = "MONTHLY"
   notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                  = 80
-    threshold_type             = "PERCENTAGE"
-    notification_type          = "ACTUAL"
-    subscriber_sns_topic_arns  = [aws_sns_topic.budget_alerts.arn]
+    comparison_operator       = "GREATER_THAN"
+    threshold                 = 80
+    threshold_type            = "PERCENTAGE"
+    notification_type         = "ACTUAL"
+    subscriber_sns_topic_arns = [aws_sns_topic.budget_alerts.arn]
   }
   notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                  = 90
-    threshold_type             = "PERCENTAGE"
-    notification_type          = "ACTUAL"
-    subscriber_sns_topic_arns  = [aws_sns_topic.budget_alerts.arn]
+    comparison_operator       = "GREATER_THAN"
+    threshold                 = 90
+    threshold_type            = "PERCENTAGE"
+    notification_type         = "ACTUAL"
+    subscriber_sns_topic_arns = [aws_sns_topic.budget_alerts.arn]
   }
   notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                  = 100
-    threshold_type             = "PERCENTAGE"
-    notification_type          = "ACTUAL"
-    subscriber_sns_topic_arns  = [aws_sns_topic.budget_alerts.arn]
+    comparison_operator       = "GREATER_THAN"
+    threshold                 = 100
+    threshold_type            = "PERCENTAGE"
+    notification_type         = "ACTUAL"
+    subscriber_sns_topic_arns = [aws_sns_topic.budget_alerts.arn]
   }
 }
 
@@ -508,25 +547,35 @@ resource "aws_budgets_budget" "main" {
 resource "aws_wafv2_web_acl" "main" {
   name  = "${local.p}-waf"
   scope = "REGIONAL"
-  default_action { allow {} }
+  default_action {
+    allow {}
+  }
 
   rule {
     name     = "RateLimit"
     priority = 1
-    action { block {} }
+    action {
+      block {}
+    }
     statement {
       rate_based_statement {
         limit              = 100
         aggregate_key_type = "IP"
       }
     }
-    visibility_config { cloudwatch_metrics_enabled = true; metric_name = "RateLimit"; sampled_requests_enabled = true }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "RateLimit"
+      sampled_requests_enabled   = true
+    }
   }
 
   rule {
     name     = "GeoRestrict"
     priority = 2
-    action { block {} }
+    action {
+      block {}
+    }
     statement {
       not_statement {
         statement {
@@ -534,10 +583,18 @@ resource "aws_wafv2_web_acl" "main" {
         }
       }
     }
-    visibility_config { cloudwatch_metrics_enabled = true; metric_name = "GeoRestrict"; sampled_requests_enabled = true }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "GeoRestrict"
+      sampled_requests_enabled   = true
+    }
   }
 
-  visibility_config { cloudwatch_metrics_enabled = true; metric_name = "${local.p}-waf"; sampled_requests_enabled = true }
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = "${local.p}-waf"
+    sampled_requests_enabled   = true
+  }
 }
 
 # ── CloudWatch Alarms ─────────────────────────────────────────────────────────
@@ -581,7 +638,7 @@ resource "aws_cloudtrail" "main" {
 }
 
 # ── Outputs ───────────────────────────────────────────────────────────────────
-output "healthlake_datastore_id"  { value = aws_healthlake_fhir_datastore.main.id }
-output "cognito_user_pool_id"     { value = aws_cognito_user_pool.main.id }
-output "knowledge_base_id"        { value = aws_bedrockagent_knowledge_base.main.id }
-output "appsync_graphql_url"      { value = aws_appsync_graphql_api.main.uris["GRAPHQL"] }
+output "healthlake_datastore_id" { value = awscc_healthlake_fhir_datastore.main.datastore_id }
+output "cognito_user_pool_id" { value = aws_cognito_user_pool.main.id }
+output "knowledge_base_id" { value = aws_bedrockagent_knowledge_base.main.id }
+output "appsync_graphql_url" { value = aws_appsync_graphql_api.main.uris["GRAPHQL"] }
