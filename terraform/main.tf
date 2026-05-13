@@ -45,7 +45,12 @@ data "aws_availability_zones" "available" { state = "available" }
 resource "aws_security_group" "lambda" {
   name   = "${local.p}-lambda-sg"
   vpc_id = aws_vpc.main.id
-  egress { from_port = 443; to_port = 443; protocol = "tcp"; cidr_blocks = ["0.0.0.0/0"] }
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 # VPC Endpoints (no internet transit for AWS service calls)
