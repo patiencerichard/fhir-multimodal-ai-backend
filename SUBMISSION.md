@@ -26,7 +26,7 @@ returns.
 4. Docker (for rPPG container build)
 5. Python 3.11+ (for Lambda packaging)
 6. HealthLake-available region: us-east-1, us-east-2, us-west-2,
-   ap-south-1, eu-west-1, eu-west-2, ap-southeast-2
+   ap-south-1, eu-west-1, eu-west-2, ap-southeast-2, ca-central-1
    ⚠️ NOT available in af-south-1 or me-south-1
 7. Bedrock Claude model access granted in your region
 8. Amazon Transcribe Standard enabled (NOT Medical — Medical is
@@ -109,7 +109,7 @@ Amazon CloudWatch · AWS CloudTrail · AWS Budgets · Amazon SNS
 
 | Problem | Fix |
 |---------|-----|
-| HealthLake creation fails | Wrong region — use us-east-1, us-east-2, us-west-2, ap-south-1, eu-west-1, eu-west-2, ap-southeast-2 |
+| HealthLake creation fails | Wrong region — use us-east-1, us-east-2, us-west-2, ap-south-1, eu-west-1, eu-west-2, ap-southeast-2, ca-central-1 |
 | Transcribe returns garbage for non-English | You used Transcribe Medical (en-US only) — switch to Transcribe Standard |
 | Bedrock "model not available" | Grant Claude model access in Bedrock console → Model access |
 | rPPG low confidence for most patients | Expected for Fitzpatrick V-VI — verify skin-tone adaptive preprocessing is on; increase clip to 30s |
