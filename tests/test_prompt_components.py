@@ -491,3 +491,79 @@ class TestCompetitionCriteria(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ===========================================================================
+# 9. SUBMISSION VERSION VALIDATION (30K char limit)
+# ===========================================================================
+class TestSubmissionVersion(unittest.TestCase):
+    """Validate prompt-submission.md fits DoraHacks and has all key content."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sub = read_file("prompt-submission.md")
+
+    def test_under_30000_characters(self):
+        self.assertLess(len(self.sub), 30000, f"Too long: {len(self.sub)} chars")
+
+    def test_has_all_layers(self):
+        for i in range(1, 6):
+            self.assertIn(f"LAYER {i}", self.sub)
+
+    def test_has_all_lambda_names(self):
+        for fn in ("channel_router", "transcription_orchestrator",
+                   "rppg_result_handler", "cough_feature_extractor",
+                   "clinical_reasoning", "fhir_sync", "budget_enforcer"):
+            self.assertIn(fn, self.sub, f"Missing Lambda: {fn}")
+
+    def test_has_regional_notes(self):
+        self.assertIn("ca-central-1", self.sub)
+        self.assertIn("af-south-1", self.sub)
+        self.assertIn("STREAMING LIMITATION", self.sub)
+
+    def test_has_all_languages(self):
+        for lang in ("sw-TZ", "so-SO", "rw-RW", "hi-IN", "bn-IN", "id-ID", "es-US", "pt-BR"):
+            self.assertIn(lang, self.sub)
+
+    def test_has_safety_rules(self):
+        self.assertIn("NEVER diagnose", self.sub)
+        self.assertIn("NEVER recommend prescription", self.sub)
+        self.assertIn("NOT a medical device", self.sub)
+
+    def test_has_cost_estimate(self):
+        self.assertIn("$0.014", self.sub)
+        self.assertIn("$215", self.sub)
+
+    def test_has_well_architected_pillars(self):
+        for p in ("OPERATIONAL EXCELLENCE", "SECURITY", "RELIABILITY",
+                  "PERFORMANCE EFFICIENCY", "COST OPTIMIZATION", "SUSTAINABILITY"):
+            self.assertIn(p, self.sub)
+
+    def test_has_troubleshooting(self):
+        self.assertIn("HealthLake fails", self.sub)
+        self.assertIn("Transcribe garbage", self.sub)
+
+    def test_has_model_id(self):
+        self.assertIn("claude-sonnet-4-20250514", self.sub)
+
+    def test_has_loinc_codes(self):
+        for code in ("8867-4", "59408-5", "8310-5", "9279-1"):
+            self.assertIn(code, self.sub)
+
+    def test_has_country_deployments(self):
+        for country in ("Tanzania", "Rwanda", "India", "Indonesia", "Nigeria"):
+            self.assertIn(country, self.sub)
+
+    def test_has_aws_services(self):
+        for svc in ("HealthLake", "Bedrock", "Transcribe", "Lambda", "ECS Fargate",
+                    "S3", "DynamoDB", "Aurora", "Step Functions", "SQS", "AppSync",
+                    "Cognito", "KMS", "WAF", "CloudWatch", "CloudTrail"):
+            self.assertIn(svc, self.sub, f"Missing service: {svc}")
+
+    def test_has_deployment_timeline(self):
+        self.assertIn("Day 1", self.sub)
+        self.assertIn("Day 5", self.sub)
+
+    def test_has_cost_comparison(self):
+        self.assertIn("GPT-4", self.sub)
+        self.assertIn("85%", self.sub)

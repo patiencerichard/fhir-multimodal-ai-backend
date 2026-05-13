@@ -90,7 +90,7 @@ Deploy AWS HealthLake as the FHIR R4-compliant datastore:
 
 CRITICAL: Use Transcribe STANDARD ($0.024/min), NOT Medical ($0.075/min, en-US only).
 
-Language sets: East Africa (sw-TZ, so-SO, rw-RW, fr-FR, en-ZA), South Asia (hi-IN, bn-IN, ta-IN), Southeast Asia (id-ID, vi-VN, tl-PH), Latin America (es-US, pt-BR), West Africa (ha-NG, wo-SN, fr-FR).
+Language sets: East Africa (sw-TZ, sw-KE, so-SO, rw-RW, lg-IN, fr-FR, en-ZA), South Asia (hi-IN, bn-IN, ta-IN, en-IN), Southeast Asia (id-ID, vi-VN, tl-PH, ms-MY, en-AU), Latin America (es-US, pt-BR, en-US), West Africa (ha-NG, wo-SN, fr-FR, en-ZA).
 
 Flow: Mobile → S3 (presigned URL, 3min expiry) → SQS FIFO → Lambda transcription orchestrator (auto-detect language, custom vocabulary) → medical term normalizer (Bedrock Haiku → SNOMED CT mapping) → Clinical Reasoning Lambda.
 
@@ -134,7 +134,7 @@ Error handling: <3/5 samples succeed → INSUFFICIENT_DATA. Retry: 2x exponentia
 
 ## LAYER 3 — CLINICAL REASONING (Bedrock)
 
-Model routing: Full triage → Claude Sonnet. Cough/quick checks → Haiku. EMERGENCY → Haiku (<3s). Complex cases → Sonnet extended. Fallback → Titan Text Lite.
+Model routing: Full triage → Claude Sonnet (claude-sonnet-4-20250514). Cough/quick checks → Haiku. EMERGENCY → Haiku (<3s). Complex cases → Sonnet extended. Fallback → Titan Text Lite (cross-region).
 
 RAG: S3 "{project}-clinical-knowledge" → Titan Embeddings V2 → Aurora Serverless v2 pgvector (0.5-2 ACU). Chunking: 512 tokens, 20% overlap. Max 5 chunks/query.
 
@@ -325,7 +325,12 @@ Scale: 15K encounters/month on $215. 150K/month scales to ~$2,150. Supports 1,00
 
 Health impact: TB early detection (2-4 weeks earlier), maternal health (voice in local language), equity (skin-tone-aware rPPG), access (offline = 100% coverage in zero-connectivity areas).
 
-Country deployments (config only): Tanzania (sw-TZ, MoH STG 2023), Rwanda (rw-RW), India (hi-IN+bn-IN), Indonesia (id-ID), Nigeria (ha-NG).
+Country deployments (configuration only — no code changes):
+- Tanzania: sw-TZ, MoH STG 2023, NHIF formulary
+- Rwanda: rw-RW, MOH clinical protocols, mutuelle coverage
+- India: hi-IN + bn-IN, AYUSH guidelines, Jan Aushadhi drugs
+- Indonesia: id-ID, Kemenkes protocols, BPJS formulary
+- Nigeria: ha-NG, FMOH guidelines, NHIS coverage
 
 ## TROUBLESHOOTING
 
