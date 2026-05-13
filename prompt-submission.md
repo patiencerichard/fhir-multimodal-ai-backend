@@ -47,6 +47,46 @@ DEPLOYMENT: 5 days — Day 1: terraform apply, Day 2: upload guidelines, Day 3: 
 
 COST vs ALTERNATIVES: This prompt $0.014/encounter ($215/mo) vs OpenAI GPT-4+Whisper $0.08-0.12 ($1,200-1,800/mo) vs Google Cloud Healthcare $0.05-0.08 ($750-1,200/mo). 85% cheaper than GPT-4 alternatives.
 
+## DECISION POINTS
+
+Before generating infrastructure, confirm these choices:
+
+1. PRIMARY REGION: Which HealthLake-available region?
+   → Options: us-east-1 (lowest latency Americas), eu-west-2 (GDPR), ap-south-1 (South Asia proximity)
+   → Default: us-east-1 (most services available)
+
+2. TARGET LANGUAGES: Which language set for your deployment country?
+   → East Africa: ["sw-TZ", "sw-KE", "so-SO", "rw-RW", "lg-IN", "fr-FR", "en-ZA"]
+   → South Asia: ["hi-IN", "bn-IN", "ta-IN", "en-IN"]
+   → Southeast Asia: ["id-ID", "vi-VN", "tl-PH", "ms-MY", "en-AU"]
+   → Latin America: ["es-US", "pt-BR", "en-US"]
+   → West Africa: ["ha-NG", "wo-SN", "fr-FR", "en-ZA"]
+   → Custom: provide your own list of Transcribe language codes
+
+3. BUDGET LIMIT: Monthly hard cap?
+   → Default: $300/month. Adjust based on expected encounter volume.
+   → At $300: supports ~21,000 encounters/month before degradation triggers.
+
+4. CLINICAL GUIDELINES: Which documents for RAG knowledge base?
+   → Required: your country's MoH treatment guidelines (PDF)
+   → Recommended: WHO IMCI guidelines, MSF Clinical Guide
+   → Optional: regional disease prevalence data, essential medicines list
+
+5. NATIONAL ID FORMAT: Patient identifier URI?
+   → Format: "urn:{country_code}:moh:national-id"
+   → Examples: "urn:tz:moh:national-id" (Tanzania), "urn:rw:moh:national-id" (Rwanda)
+
+6. DATA RETENTION: How long to keep audit logs?
+   → Default: 7 years. Adjust per your country's health data retention laws.
+
+7. rPPG INCLUSION: Enable camera-based vitals?
+   → Yes (default): adds ~$25/month but provides HR + SpO2 estimation
+   → No: skip Path B, reduce cost to ~$190/month, voice + cough only
+
+8. WAF GEO-RESTRICTION: Which country codes to allow?
+   → Provide ISO country codes for your deployment region + admin locations
+   → Example Tanzania: ["TZ", "US"] (TZ for CHWs, US for admin team)
+
 ## ARCHITECTURE
 
 ```
