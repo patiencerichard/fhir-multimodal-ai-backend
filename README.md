@@ -137,4 +137,4 @@ MIT
 
 ## Competition
 
-Submitted to [AWS Prompt the Planet Challenge](https://awsprompttheplanet.devpost.com/) — March–June 2026.
+Submitted to [AWS Prompt the Planet Challenge](https://dorahacks.io/hackathon/awsprompttheplanet) — March–June 2026.
